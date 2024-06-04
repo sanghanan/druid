@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
+import type { ExpressionMeta } from '../../modules';
 
 export class DragHelper {
   static dragColumn: ExpressionMeta | undefined;

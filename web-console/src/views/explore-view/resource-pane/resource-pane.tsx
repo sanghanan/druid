@@ -16,41 +16,44 @@
  * limitations under the License.
  */
 
-import { Icon, InputGroup, Menu, MenuItem } from '@blueprintjs/core';
+import { Icon, Intent, Menu, MenuDivider, MenuItem } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
+import type { SqlQuery } from '@druid-toolkit/query';
 import React, { useState } from 'react';
 
+import { ClearableInput } from '../../../components';
+import type { ExpressionMeta, QuerySource } from '../../../modules';
 import { caseInsensitiveContains, dataTypeToIcon, filterMap } from '../../../utils';
 import { DragHelper } from '../drag-helper';
-import type { Dataset } from '../utils';
 
 import './resource-pane.scss';
 
 export interface ResourcePaneProps {
-  dataset: Dataset;
+  querySource: QuerySource;
+  onQueryChange: (newQuery: SqlQuery) => void;
   onFilter?: (column: ExpressionMeta) => void;
   onShow?: (column: ExpressionMeta) => void;
 }
 
 export const ResourcePane = function ResourcePane(props: ResourcePaneProps) {
-  const { dataset, onFilter, onShow } = props;
+  const { querySource, onQueryChange, onFilter, onShow } = props;
   const [columnSearch, setColumnSearch] = useState('');
 
-  const { columns } = dataset;
+  // const { query, columns } = querySource;
 
   return (
     <div className="resource-pane">
-      <InputGroup
+      <ClearableInput
         className="search-input"
         value={columnSearch}
-        onChange={e => setColumnSearch(e.target.value)}
-        placeholder="Search..."
+        onChange={setColumnSearch}
+        placeholder="Search"
       />
       <div className="resource-items">
-        {filterMap(columns, (c, i) => {
-          if (!caseInsensitiveContains(c.name, columnSearch)) return;
+        {filterMap(querySource.columns, (c, i) => {
+          const columnName = c.name;
+          if (!caseInsensitiveContains(columnName, columnSearch)) return;
           return (
             <Popover2
               className="resource-item"
@@ -64,6 +67,13 @@ export const ResourcePane = function ResourcePane(props: ResourcePaneProps) {
                   {onShow && (
                     <MenuItem icon={IconNames.EYE_OPEN} text="Show" onClick={() => onShow(c)} />
                   )}
+                  <MenuDivider />
+                  <MenuItem
+                    icon={IconNames.TRASH}
+                    text="Delete"
+                    intent={Intent.DANGER}
+                    onClick={() => onQueryChange(querySource.deleteColumn(columnName))}
+                  />
                 </Menu>
               }
             >

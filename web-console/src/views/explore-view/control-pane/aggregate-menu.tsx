@@ -18,9 +18,9 @@
 
 import { InputGroup, Menu, MenuItem } from '@blueprintjs/core';
 import { SqlFunction } from '@druid-toolkit/query';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 import React, { useState } from 'react';
 
+import type { ExpressionMeta } from '../../../modules';
 import { caseInsensitiveContains } from '../../../utils';
 
 import { getPossibleAggregateForColumn } from './helpers';
@@ -50,7 +50,7 @@ export const AggregateMenu = function AggregateMenu(props: AggregateMenuProps) {
         className="search-input"
         value={columnSearch}
         onChange={e => setColumnSearch(e.target.value)}
-        placeholder="Search..."
+        placeholder="Search"
         autoFocus
       />
       <Menu className="inner-menu">

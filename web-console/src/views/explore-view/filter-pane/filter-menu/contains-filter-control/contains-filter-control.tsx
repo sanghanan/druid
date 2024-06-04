@@ -18,29 +18,29 @@
 
 import { Button, FormGroup, InputGroup, Intent, Menu, MenuItem } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import type { ContainsFilterPattern } from '@druid-toolkit/query';
+import type { ContainsFilterPattern, QueryResult, SqlQuery } from '@druid-toolkit/query';
 import { C, filterPatternToExpression, SqlExpression, SqlLiteral } from '@druid-toolkit/query';
 import React, { useMemo, useState } from 'react';
 
 import { useQueryManager } from '../../../../../hooks';
+import type { QuerySource } from '../../../../../modules';
 import { ColumnPicker } from '../../../column-picker/column-picker';
-import type { Dataset } from '../../../utils';
 
 import './contains-filter-control.scss';
 
 export interface ContainsFilterControlProps {
-  dataset: Dataset;
+  querySource: QuerySource;
   filter: SqlExpression | undefined;
   initFilterPattern: ContainsFilterPattern;
   negated: boolean;
   setFilterPattern(filterPattern: ContainsFilterPattern): void;
-  queryDruidSql<T = any>(sqlQueryPayload: Record<string, any>): Promise<T[]>;
+  runSqlQuery(query: string | SqlQuery): Promise<QueryResult>;
 }
 
 export const ContainsFilterControl = React.memo(function ContainsFilterControl(
   props: ContainsFilterControlProps,
 ) {
-  const { dataset, filter, initFilterPattern, negated, setFilterPattern, queryDruidSql } = props;
+  const { querySource, filter, initFilterPattern, negated, setFilterPattern, runSqlQuery } = props;
   const [column, setColumn] = useState<string>(initFilterPattern.column);
   const [contains, setContains] = useState(initFilterPattern.contains);
 
@@ -55,7 +55,7 @@ export const ContainsFilterControl = React.memo(function ContainsFilterControl(
 
   const previewQuery = useMemo(() => {
     const columnRef = C(column);
-    const queryParts: string[] = [`SELECT ${columnRef.as('c')}`, `FROM ${dataset.table}`];
+    const queryParts: string[] = [`SELECT ${columnRef.as('c')}`, `FROM (${querySource.query})`];
 
     const filterEx = SqlExpression.and(
       filter,
@@ -68,18 +68,15 @@ export const ContainsFilterControl = React.memo(function ContainsFilterControl(
     queryParts.push(`GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 101`);
     return queryParts.join('\n');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- exclude 'makePattern' from deps
-  }, [dataset.table, filter, column, contains, negated]);
+  }, [querySource.query, filter, column, contains, negated]);
 
   const [previewState] = useQueryManager<string, string[]>({
     query: previewQuery,
     debounceIdle: 100,
     debounceLoading: 500,
     processQuery: async query => {
-      const vs = await queryDruidSql<{ c: any }>({
-        query,
-      });
-
-      return vs.map(d => String(d.c));
+      const vs = await runSqlQuery(query);
+      return (vs.getColumnByName('c') || []).map(String);
     },
   });
 
@@ -87,7 +84,7 @@ export const ContainsFilterControl = React.memo(function ContainsFilterControl(
     <div className="contains-filter-control">
       <FormGroup label="Column">
         <ColumnPicker
-          availableColumns={dataset.columns}
+          availableColumns={querySource.columns}
           selectedColumnName={column}
           onSelectedColumnNameChange={setColumn}
         />

@@ -19,10 +19,11 @@
 import { Classes, Menu, MenuItem, Position, Tag } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type { OptionValue, ParameterDefinition } from '@druid-toolkit/visuals-core';
-import { getPluginOptionLabel } from '@druid-toolkit/visuals-core';
 import classNames from 'classnames';
 import React from 'react';
+
+import type { OptionValue, ParameterDefinition } from '../../../modules';
+import { getModuleOptionLabel } from '../../../modules';
 
 export interface OptionsInputProps {
   parameter: ParameterDefinition;
@@ -55,7 +56,7 @@ export const OptionsInput = function OptionsInput(props: OptionsInputProps) {
               onValueChange(value.filter(v => v !== o));
             }}
           >
-            {getPluginOptionLabel(o, parameter)}
+            {getModuleOptionLabel(o, parameter)}
           </Tag>
         ))}
         <Popover2
@@ -65,7 +66,7 @@ export const OptionsInput = function OptionsInput(props: OptionsInputProps) {
               {availableOptions.map((o, i) => (
                 <MenuItem
                   key={i}
-                  text={getPluginOptionLabel(o, parameter)}
+                  text={getModuleOptionLabel(o, parameter)}
                   onClick={() => {
                     onValueChange(value.concat(o));
                   }}

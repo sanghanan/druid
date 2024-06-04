@@ -19,11 +19,11 @@
 import { Classes, Position, Tag } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 import classNames from 'classnames';
 import type { JSX } from 'react';
 import React, { useCallback, useState } from 'react';
 
+import type { ExpressionMeta } from '../../../modules';
 import { ColumnPickerMenu } from '../column-picker-menu/column-picker-menu';
 
 import './columns-input.scss';

@@ -44,6 +44,7 @@ import {
   SqlDataLoaderView,
   SupervisorsView,
   TasksView,
+  TilesView,
   WorkbenchView,
 } from './views';
 
@@ -423,6 +424,10 @@ export class ConsoleApplication extends React.PureComponent<
     return this.wrapInViewContainer('explore', <ExploreView />, 'thinner');
   };
 
+  private readonly wrappedTilesView = () => {
+    return this.wrapInViewContainer('tiles', <TilesView />, 'thinner');
+  };
+
   render() {
     const { capabilities, capabilitiesLoading } = this.state;
 
@@ -483,6 +488,7 @@ export class ConsoleApplication extends React.PureComponent<
               {capabilities.hasSql() && (
                 <Route path="/explore" component={this.wrappedExploreView} />
               )}
+              {capabilities.hasSql() && <Route path="/tiles" component={this.wrappedTilesView} />}
 
               <Route component={this.wrappedHomeView} />
             </Switch>

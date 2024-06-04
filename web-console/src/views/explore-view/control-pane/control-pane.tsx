@@ -27,17 +27,12 @@ import {
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type {
-  ExpressionMeta,
-  OptionValue,
-  ParameterDefinition,
-  RegisteredVisualModule,
-} from '@druid-toolkit/visuals-core';
-import { getPluginOptionLabel } from '@druid-toolkit/visuals-core';
 import type { JSX } from 'react';
 import React from 'react';
 
 import { AutoForm, FormGroupWithInfo, PopoverText } from '../../../components';
+import type { ExpressionMeta, OptionValue, ParameterDefinition } from '../../../modules';
+import { effectiveParameterDefault, evaluateFunctor, getModuleOptionLabel } from '../../../modules';
 import { AppToaster } from '../../../singletons';
 import { ColumnPickerMenu } from '../column-picker-menu/column-picker-menu';
 import { DroppableContainer } from '../droppable-container/droppable-container';
@@ -52,12 +47,12 @@ import './control-pane.scss';
 export interface ControlPaneProps {
   columns: ExpressionMeta[];
   onUpdateParameterValues(params: Record<string, unknown>): void;
+  parameters: Record<string, ParameterDefinition>;
   parameterValues: Record<string, unknown>;
-  visualModule: RegisteredVisualModule;
 }
 
 export const ControlPane = function ControlPane(props: ControlPaneProps) {
-  const { columns, onUpdateParameterValues, parameterValues, visualModule } = props;
+  const { columns, onUpdateParameterValues, parameters, parameterValues } = props;
 
   function renderOptionsPropInput(
     parameter: ParameterDefinition,
@@ -67,13 +62,14 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
     element: JSX.Element;
     onDropColumn?: (column: ExpressionMeta) => void;
   } {
+    const effectiveValue = value ?? effectiveParameterDefault(parameter);
     switch (parameter.type) {
       case 'boolean': {
         return {
           element: (
             <ButtonGroup>
               <Button
-                active={value === false}
+                active={effectiveValue === false}
                 onClick={() => {
                   onValueChange(false);
                 }}
@@ -81,7 +77,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
                 False
               </Button>
               <Button
-                active={value === true}
+                active={effectiveValue === true}
                 onClick={() => {
                   onValueChange(true);
                 }}
@@ -97,7 +93,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
         return {
           element: (
             <NumericInput
-              value={(value as string) ?? ''}
+              value={(effectiveValue as string) ?? ''}
               onValueChange={v => onValueChange(v)}
               placeholder={parameter.control?.placeholder}
               fill
@@ -111,7 +107,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
         return {
           element: (
             <InputGroup
-              value={(value as string) || ''}
+              value={(effectiveValue as string) || ''}
               onChange={e => onValueChange(e.target.value)}
               placeholder={parameter.control?.placeholder}
               fill
@@ -121,7 +117,9 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
 
       case 'option': {
         const controlOptions = parameter.options || [];
-        const selectedOption: OptionValue | undefined = controlOptions.find(o => o === value);
+        const selectedOption: OptionValue | undefined = controlOptions.find(
+          o => o === effectiveValue,
+        );
         return {
           element: (
             <Popover2
@@ -133,7 +131,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
                   {controlOptions.map((o, i) => (
                     <MenuItem
                       key={i}
-                      text={getPluginOptionLabel(o, parameter)}
+                      text={getModuleOptionLabel(o, parameter)}
                       onClick={() => onValueChange(o)}
                     />
                   ))}
@@ -143,8 +141,8 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
               <InputGroup
                 value={
                   typeof selectedOption === 'undefined'
-                    ? String(value)
-                    : getPluginOptionLabel(selectedOption, parameter)
+                    ? String(effectiveValue)
+                    : getModuleOptionLabel(selectedOption, parameter)
                 }
                 readOnly
                 fill
@@ -160,7 +158,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
           element: (
             <OptionsInput
               options={parameter.options || []}
-              value={(value as OptionValue[]) || []}
+              value={(effectiveValue as OptionValue[]) || []}
               onValueChange={onValueChange}
               parameter={parameter}
             />
@@ -186,7 +184,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
               }
             >
               <InputGroup
-                value={(value as ExpressionMeta)?.name || 'None'}
+                value={(effectiveValue as ExpressionMeta)?.name || 'None'}
                 readOnly
                 fill
                 rightElement={<Button icon={IconNames.CARET_DOWN} minimal />}
@@ -202,17 +200,16 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
             <ColumnsInput
               columns={columns}
               allowReordering
-              value={(value as ExpressionMeta[]) || []}
+              value={(effectiveValue as ExpressionMeta[]) || []}
               onValueChange={onValueChange}
               allowDuplicates={parameter.allowDuplicates}
             />
           ),
           onDropColumn: (column: ExpressionMeta) => {
-            value = value || [];
             const columnName = column.name;
             if (
               !parameter.allowDuplicates &&
-              value.find((v: ExpressionMeta) => v.name === columnName)
+              effectiveValue.find((v: ExpressionMeta) => v.name === columnName)
             ) {
               AppToaster.show({
                 intent: Intent.WARNING,
@@ -220,7 +217,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
               });
               return;
             }
-            onValueChange(value.concat(column));
+            onValueChange(effectiveValue.concat(column));
           },
         };
       }
@@ -243,7 +240,7 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
               }
             >
               <InputGroup
-                value={value ? (value as { name: string }).name : 'None'}
+                value={effectiveValue ? (effectiveValue as { name: string }).name : 'None'}
                 readOnly
                 fill
                 rightElement={<Button icon={IconNames.CARET_DOWN} minimal />}
@@ -263,24 +260,23 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
           element: (
             <ColumnsInput
               columns={columns}
-              value={(value as ExpressionMeta[]) || []}
+              value={effectiveValue}
               onValueChange={onValueChange}
               allowReordering
               pickerMenu={availableColumns => (
                 <AggregateMenu
                   columns={availableColumns}
-                  onSelectAggregate={c => onValueChange((value as ExpressionMeta[]).concat(c))}
+                  onSelectAggregate={c => onValueChange(effectiveValue.concat(c))}
                 />
               )}
             />
           ),
           onDropColumn: column => {
-            value = value || [];
             const aggregates = getPossibleAggregateForColumn(column).filter(
-              p => !value.some((v: ExpressionMeta) => v.name === p.name),
+              p => !effectiveValue.some((v: ExpressionMeta) => v.name === p.name),
             );
             if (!aggregates.length) return;
-            onValueChange(value.concat(aggregates[0]));
+            onValueChange(effectiveValue.concat(aggregates[0]));
           },
         };
       }
@@ -299,18 +295,13 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
     }
   }
 
-  const namedParameters = Object.entries(visualModule.parameterDefinitions ?? {});
+  const namedParameters = Object.entries(parameters ?? {});
 
   return (
     <div className="control-pane">
       {namedParameters.map(([name, parameter], i) => {
-        const visible = parameter.control?.visible;
-        if (
-          visible === false ||
-          (typeof visible === 'function' && !visible({ params: parameterValues }))
-        ) {
-          return;
-        }
+        const visible = evaluateFunctor(parameter.control?.visible, parameterValues);
+        if (visible === false) return;
 
         const value = parameterValues[name];
         function onValueChange(newValue: unknown) {
@@ -319,15 +310,15 @@ export const ControlPane = function ControlPane(props: ControlPaneProps) {
 
         const { element, onDropColumn } = renderOptionsPropInput(parameter, value, onValueChange);
 
+        const description = evaluateFunctor(parameter.control?.description, parameterValues);
         const formGroup = (
           <FormGroupWithInfo
             key={i}
-            label={parameter.control?.label || AutoForm.makeLabelName(name)}
-            info={
-              parameter.control?.description ? (
-                <PopoverText>{parameter.control.description}</PopoverText>
-              ) : undefined
+            label={
+              evaluateFunctor(parameter.control?.label, parameterValues) ||
+              AutoForm.makeLabelName(name)
             }
+            info={description && <PopoverText>{description}</PopoverText>}
           >
             {element}
           </FormGroupWithInfo>

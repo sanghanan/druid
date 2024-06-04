@@ -19,10 +19,10 @@
 import type { IconName } from '@blueprintjs/core';
 import { Icon, InputGroup, Menu, MenuItem } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 import classNames from 'classnames';
 import React, { useState } from 'react';
 
+import type { ExpressionMeta } from '../../../modules';
 import { caseInsensitiveContains, dataTypeToIcon, filterMap } from '../../../utils';
 
 import './column-picker-menu.scss';
@@ -47,7 +47,7 @@ export const ColumnPickerMenu = function ColumnPickerMenu(props: ColumnPickerMen
         className="search-input"
         value={columnSearch}
         onChange={e => setColumnSearch(e.target.value)}
-        placeholder="Search..."
+        placeholder="Search"
         autoFocus
       />
       <Menu className="column-menu">

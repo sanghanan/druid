@@ -33,6 +33,7 @@ export * from './form-json-selector/form-json-selector';
 export * from './formatted-input/formatted-input';
 export * from './header-bar/header-bar';
 export * from './highlight-text/highlight-text';
+export * from './issue/issue';
 export * from './json-collapse/json-collapse';
 export * from './json-input/json-input';
 export * from './learn-more/learn-more';

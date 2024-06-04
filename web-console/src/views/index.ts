@@ -26,4 +26,5 @@ export * from './services-view/services-view';
 export * from './sql-data-loader-view/sql-data-loader-view';
 export * from './supervisors-view/supervisors-view';
 export * from './tasks-view/tasks-view';
+export * from './tiles-view/tiles-view';
 export * from './workbench-view/workbench-view';

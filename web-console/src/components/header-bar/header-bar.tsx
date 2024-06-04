@@ -71,6 +71,7 @@ export type HeaderActiveTab =
   | 'workbench'
   | 'sql-data-loader'
   | 'explore'
+  | 'tiles'
   | 'lookups';
 
 const DruidLogo = React.memo(function DruidLogo() {
@@ -158,6 +159,14 @@ export const HeaderBar = React.memo(function HeaderBar(props: HeaderBarProps) {
         href="#explore"
         disabled={!capabilities.hasSql()}
         selected={active === 'explore'}
+      />
+      <MenuItem
+        icon={IconNames.APPLICATIONS}
+        text="Tiles"
+        label="(experimental)"
+        href="#tiles"
+        disabled={!capabilities.hasSql()}
+        selected={active === 'tiles'}
       />
     </Menu>
   );

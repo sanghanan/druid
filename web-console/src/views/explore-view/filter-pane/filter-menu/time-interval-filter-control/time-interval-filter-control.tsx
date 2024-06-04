@@ -20,8 +20,8 @@ import { Button, FormGroup, InputGroup, Intent } from '@blueprintjs/core';
 import type { TimeIntervalFilterPattern } from '@druid-toolkit/query';
 import React, { useState } from 'react';
 
+import type { QuerySource } from '../../../../../modules';
 import { ColumnPicker } from '../../../column-picker/column-picker';
-import type { Dataset } from '../../../utils';
 
 function utcParseDate(dateString: string): Date | undefined {
   const dateParts = dateString.split(/[-T:. ]/g);
@@ -60,7 +60,7 @@ function formatDate(date: Date): string {
 }
 
 export interface TimeIntervalFilterControlProps {
-  dataset: Dataset;
+  querySource: QuerySource;
   initFilterPattern: TimeIntervalFilterPattern;
   negated: boolean;
   setFilterPattern(filterPattern: TimeIntervalFilterPattern): void;
@@ -69,7 +69,7 @@ export interface TimeIntervalFilterControlProps {
 export const TimeIntervalFilterControl = React.memo(function TimeIntervalFilterControl(
   props: TimeIntervalFilterControlProps,
 ) {
-  const { dataset, initFilterPattern, negated, setFilterPattern } = props;
+  const { querySource, initFilterPattern, negated, setFilterPattern } = props;
   const [column, setColumn] = useState<string>(initFilterPattern.column);
   const [startString, setStartString] = useState<string>(formatDate(initFilterPattern.start));
   const [endString, setEndString] = useState<string>(formatDate(initFilterPattern.end));
@@ -96,7 +96,7 @@ export const TimeIntervalFilterControl = React.memo(function TimeIntervalFilterC
     <div className="time-interval-filter-control">
       <FormGroup label="Column">
         <ColumnPicker
-          availableColumns={dataset.columns}
+          availableColumns={querySource.columns}
           selectedColumnName={column}
           onSelectedColumnNameChange={setColumn}
         />

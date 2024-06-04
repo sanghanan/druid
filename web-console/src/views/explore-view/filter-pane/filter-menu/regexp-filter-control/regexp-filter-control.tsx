@@ -18,13 +18,13 @@
 
 import { Button, FormGroup, InputGroup, Intent, Menu, MenuItem } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import type { RegexpFilterPattern } from '@druid-toolkit/query';
+import type { QueryResult, RegexpFilterPattern, SqlQuery } from '@druid-toolkit/query';
 import { C, filterPatternToExpression, SqlExpression, SqlLiteral } from '@druid-toolkit/query';
 import React, { useMemo, useState } from 'react';
 
 import { useQueryManager } from '../../../../../hooks';
+import type { QuerySource } from '../../../../../modules';
 import { ColumnPicker } from '../../../column-picker/column-picker';
-import type { Dataset } from '../../../utils';
 
 import './regexp-filter-control.scss';
 
@@ -38,18 +38,18 @@ function regexpIssue(possibleRegexp: string): string | undefined {
 }
 
 export interface RegexpFilterControlProps {
-  dataset: Dataset;
+  querySource: QuerySource;
   filter: SqlExpression | undefined;
   initFilterPattern: RegexpFilterPattern;
   negated: boolean;
   setFilterPattern(filterPattern: RegexpFilterPattern): void;
-  queryDruidSql<T = any>(sqlQueryPayload: Record<string, any>): Promise<T[]>;
+  runSqlQuery(query: string | SqlQuery): Promise<QueryResult>;
 }
 
 export const RegexpFilterControl = React.memo(function RegexpFilterControl(
   props: RegexpFilterControlProps,
 ) {
-  const { dataset, filter, initFilterPattern, negated, setFilterPattern, queryDruidSql } = props;
+  const { querySource, filter, initFilterPattern, negated, setFilterPattern, runSqlQuery } = props;
   const [column, setColumn] = useState<string>(initFilterPattern.column);
   const [regexp, setRegexp] = useState(initFilterPattern.regexp);
 
@@ -64,7 +64,7 @@ export const RegexpFilterControl = React.memo(function RegexpFilterControl(
 
   const previewQuery = useMemo(() => {
     const columnRef = C(column);
-    const queryParts: string[] = [`SELECT ${columnRef.as('c')}`, `FROM ${dataset.table}`];
+    const queryParts: string[] = [`SELECT ${columnRef.as('c')}`, `FROM (${querySource.query})`];
 
     const filterEx = SqlExpression.and(
       filter,
@@ -77,18 +77,15 @@ export const RegexpFilterControl = React.memo(function RegexpFilterControl(
     queryParts.push(`GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 101`);
     return queryParts.join('\n');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- exclude 'makePattern' from deps
-  }, [dataset.table, filter, column, regexp, negated]);
+  }, [querySource.query, filter, column, regexp, negated]);
 
   const [previewState] = useQueryManager<string, string[]>({
     query: previewQuery,
     debounceIdle: 100,
     debounceLoading: 500,
     processQuery: async query => {
-      const vs = await queryDruidSql<{ c: any }>({
-        query,
-      });
-
-      return vs.map(d => String(d.c));
+      const vs = await runSqlQuery(query);
+      return (vs.getColumnByName('c') || []).map(String);
     },
   });
 
@@ -97,7 +94,7 @@ export const RegexpFilterControl = React.memo(function RegexpFilterControl(
     <div className="regexp-filter-control">
       <FormGroup label="Column">
         <ColumnPicker
-          availableColumns={dataset.columns}
+          availableColumns={querySource.columns}
           selectedColumnName={column}
           onSelectedColumnNameChange={setColumn}
         />

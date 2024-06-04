@@ -17,7 +17,8 @@
  */
 
 import { C, F, SqlFunction } from '@druid-toolkit/query';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
+
+import type { ExpressionMeta } from '../../../modules';
 
 export function getPossibleAggregateForColumn(column: ExpressionMeta): ExpressionMeta[] {
   switch (column.sqlType) {

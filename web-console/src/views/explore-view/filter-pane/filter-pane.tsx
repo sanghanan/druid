@@ -19,14 +19,13 @@
 import { Button } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type { FilterPattern, SqlExpression } from '@druid-toolkit/query';
+import type { FilterPattern, QueryResult, SqlExpression, SqlQuery } from '@druid-toolkit/query';
 import { filterPatternsToExpression, fitFilterPatterns } from '@druid-toolkit/query';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 import classNames from 'classnames';
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 
+import type { ExpressionMeta, QuerySource } from '../../../modules';
 import { DroppableContainer } from '../droppable-container/droppable-container';
-import type { Dataset } from '../utils';
 
 import { FilterMenu } from './filter-menu/filter-menu';
 import { formatPatternWithoutNegation, initPatternForColumn } from './pattern-helpers';
@@ -34,14 +33,14 @@ import { formatPatternWithoutNegation, initPatternForColumn } from './pattern-he
 import './filter-pane.scss';
 
 export interface FilterPaneProps {
-  dataset: Dataset | undefined;
+  querySource: QuerySource | undefined;
   filter: SqlExpression;
   onFilterChange(filter: SqlExpression): void;
-  queryDruidSql<T = any>(sqlQueryPayload: Record<string, any>): Promise<T[]>;
+  runSqlQuery(query: string | SqlQuery): Promise<QueryResult>;
 }
 
 export const FilterPane = forwardRef(function FilterPane(props: FilterPaneProps, ref) {
-  const { dataset, filter, onFilterChange, queryDruidSql } = props;
+  const { querySource, filter, onFilterChange, runSqlQuery } = props;
   const patterns = fitFilterPatterns(filter);
 
   const [menuIndex, setMenuIndex] = useState<number>(-1);
@@ -73,17 +72,16 @@ export const FilterPane = forwardRef(function FilterPane(props: FilterPaneProps,
 
   return (
     <DroppableContainer className="filter-pane" onDropColumn={filterOn}>
-      <Button className="filter-label" minimal text="Filter:" />
       {patterns.map((pattern, i) => {
         return (
           <div className="filter-pill" key={i}>
-            {dataset ? (
+            {querySource ? (
               <Popover2
                 isOpen={i === menuIndex}
                 onClose={() => setMenuIndex(-1)}
                 content={
                   <FilterMenu
-                    dataset={dataset}
+                    querySource={querySource}
                     filter={filter}
                     initPattern={pattern}
                     onPatternChange={newPattern => {
@@ -92,7 +90,7 @@ export const FilterPane = forwardRef(function FilterPane(props: FilterPaneProps,
                     onClose={() => {
                       setMenuIndex(-1);
                     }}
-                    queryDruidSql={queryDruidSql}
+                    runSqlQuery={runSqlQuery}
                   />
                 }
                 position="bottom"
@@ -122,7 +120,7 @@ export const FilterPane = forwardRef(function FilterPane(props: FilterPaneProps,
           </div>
         );
       })}
-      {dataset && (
+      {querySource && (
         <Popover2
           className="add-button"
           isOpen={Boolean(menuNew)}
@@ -130,7 +128,7 @@ export const FilterPane = forwardRef(function FilterPane(props: FilterPaneProps,
           onClose={() => setMenuNew(undefined)}
           content={
             <FilterMenu
-              dataset={dataset}
+              querySource={querySource}
               filter={filter}
               initPattern={menuNew?.column ? initPatternForColumn(menuNew?.column) : undefined}
               onPatternChange={newPattern => {
@@ -139,11 +137,16 @@ export const FilterPane = forwardRef(function FilterPane(props: FilterPaneProps,
               onClose={() => {
                 setMenuNew(undefined);
               }}
-              queryDruidSql={queryDruidSql}
+              runSqlQuery={runSqlQuery}
             />
           }
         >
-          <Button icon={IconNames.PLUS} onClick={() => setMenuNew({})} minimal />
+          <Button
+            icon={IconNames.PLUS}
+            text={patterns.length ? undefined : 'Add filter'}
+            onClick={() => setMenuNew({})}
+            minimal
+          />
         </Popover2>
       )}
     </DroppableContainer>

@@ -17,8 +17,8 @@
  */
 
 import type { FilterPattern } from '@druid-toolkit/query';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 
+import type { ExpressionMeta } from '../../../modules';
 import { DATE_FORMAT } from '../utils';
 
 export function initPatternForColumn(column: ExpressionMeta): FilterPattern {

@@ -19,9 +19,10 @@
 import { Classes, Position, Tag } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 import classNames from 'classnames';
 import React from 'react';
+
+import type { ExpressionMeta } from '../../../modules';
 
 import { AggregateMenu } from './aggregate-menu';
 

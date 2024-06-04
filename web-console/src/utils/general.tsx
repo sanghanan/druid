@@ -144,6 +144,11 @@ export function change<T>(xs: readonly T[], from: T, to: T): T[] {
   return xs.map(x => (x === from ? to : x));
 }
 
+export function removeObjectKey<T, K extends keyof T>(obj: T, key: K): Omit<T, K> {
+  const { [key]: _, ...rest } = obj;
+  return rest;
+}
+
 // ----------------------------
 
 export function countBy<T>(
@@ -184,7 +189,9 @@ export function mapRecord<T, Q>(
   const newRecord: Record<string, Q> = {};
   const keys = Object.keys(record);
   for (const key of keys) {
-    newRecord[key] = fn(record[key], key);
+    const mapped = fn(record[key], key);
+    if (typeof mapped === 'undefined') continue;
+    newRecord[key] = mapped;
   }
   return newRecord;
 }
@@ -240,6 +247,7 @@ export function formatInteger(n: NumberLike): string {
 }
 
 export function formatNumber(n: NumberLike): string {
+  if (n == null) return '';
   return n.toLocaleString('en-US', { maximumFractionDigits: 20 });
 }
 

@@ -18,34 +18,41 @@
 
 import { Button, FormGroup, InputGroup, Intent, Menu, MenuItem } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import type { ValuesFilterPattern } from '@druid-toolkit/query';
+import type { QueryResult, SqlQuery, ValuesFilterPattern } from '@druid-toolkit/query';
 import { C, F, L, SqlExpression, SqlLiteral } from '@druid-toolkit/query';
 import React, { useMemo, useState } from 'react';
 
 import { useQueryManager } from '../../../../../hooks';
+import type { QuerySource } from '../../../../../modules';
 import { caseInsensitiveContains, nonEmptyArray } from '../../../../../utils';
 import { ColumnPicker } from '../../../column-picker/column-picker';
-import type { Dataset } from '../../../utils';
 import { toggle } from '../../../utils';
 import { ColumnValue } from '../../column-value/column-value';
 
 import './values-filter-control.scss';
 
 export interface ValuesFilterControlProps {
-  dataset: Dataset;
+  querySource: QuerySource;
   filter: SqlExpression | undefined;
   initFilterPattern: ValuesFilterPattern;
   negated: boolean;
   setFilterPattern(filterPattern: ValuesFilterPattern): void;
   onClose(): void;
-  queryDruidSql<T = any>(sqlQueryPayload: Record<string, any>): Promise<T[]>;
+  runSqlQuery(query: string | SqlQuery): Promise<QueryResult>;
 }
 
 export const ValuesFilterControl = React.memo(function ValuesFilterControl(
   props: ValuesFilterControlProps,
 ) {
-  const { dataset, filter, initFilterPattern, negated, setFilterPattern, onClose, queryDruidSql } =
-    props;
+  const {
+    querySource,
+    filter,
+    initFilterPattern,
+    negated,
+    setFilterPattern,
+    onClose,
+    runSqlQuery,
+  } = props;
   const [column, setColumn] = useState<string>(initFilterPattern.column);
   const [selectedValues, setSelectedValues] = useState<any[]>(initFilterPattern.values);
   const [searchString, setSearchString] = useState('');
@@ -61,7 +68,7 @@ export const ValuesFilterControl = React.memo(function ValuesFilterControl(
 
   const valuesQuery = useMemo(() => {
     const columnRef = C(column);
-    const queryParts: string[] = [`SELECT ${columnRef.as('c')}`, `FROM ${dataset.table}`];
+    const queryParts: string[] = [`SELECT ${columnRef.as('c')}`, `FROM (${querySource.query})`];
 
     const filterEx = SqlExpression.and(
       filter,
@@ -73,18 +80,15 @@ export const ValuesFilterControl = React.memo(function ValuesFilterControl(
 
     queryParts.push(`GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 101`);
     return queryParts.join('\n');
-  }, [dataset.table, filter, column, searchString]);
+  }, [querySource.query, filter, column, searchString]);
 
   const [valuesState] = useQueryManager<string, any[]>({
     query: valuesQuery,
     debounceIdle: 100,
     debounceLoading: 500,
     processQuery: async query => {
-      const vs = await queryDruidSql<{ c: any }>({
-        query,
-      });
-
-      return vs.map(d => d.c);
+      const vs = await runSqlQuery(query);
+      return vs.getColumnByName('c') || [];
     },
   });
 
@@ -102,7 +106,7 @@ export const ValuesFilterControl = React.memo(function ValuesFilterControl(
     <div className="values-filter-control">
       <FormGroup label="Column">
         <ColumnPicker
-          availableColumns={dataset.columns}
+          availableColumns={querySource.columns}
           selectedColumnName={column}
           onSelectedColumnNameChange={selectedColumnName => {
             setColumn(selectedColumnName);
@@ -114,7 +118,7 @@ export const ValuesFilterControl = React.memo(function ValuesFilterControl(
         <InputGroup
           value={searchString}
           onChange={e => setSearchString(e.target.value)}
-          placeholder="Search..."
+          placeholder="Search"
         />
         <Menu className="value-list">
           {valuesToShow.map((v, i) => (

@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 import classNames from 'classnames';
-import React, { forwardRef, useState } from 'react';
+import React, { useState } from 'react';
 
+import type { ExpressionMeta } from '../../../modules';
 import { DragHelper } from '../drag-helper';
 
 import './droppable-container.scss';
@@ -29,16 +29,12 @@ export interface DroppableContainerProps extends React.HTMLAttributes<HTMLDivEle
   children?: React.ReactNode;
 }
 
-export const DroppableContainer = forwardRef(function DroppableContainer(
-  props: DroppableContainerProps,
-  ref,
-) {
+export const DroppableContainer = function DroppableContainer(props: DroppableContainerProps) {
   const { className, onDropColumn, children, ...rest } = props;
   const [dropHover, setDropHover] = useState(false);
 
   return (
     <div
-      ref={ref as any}
       className={classNames('droppable-container', className, { 'drop-hover': dropHover })}
       {...rest}
       onDragOver={e => {
@@ -64,4 +60,4 @@ export const DroppableContainer = forwardRef(function DroppableContainer(
       {children}
     </div>
   );
-});
+};

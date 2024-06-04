@@ -18,13 +18,19 @@
 
 import { Button, ButtonGroup, FormGroup, HTMLSelect } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import type { FilterPattern, FilterPatternType, SqlExpression } from '@druid-toolkit/query';
+import type {
+  FilterPattern,
+  FilterPatternType,
+  QueryResult,
+  SqlExpression,
+  SqlQuery,
+} from '@druid-toolkit/query';
 import { changeFilterPatternType, FILTER_PATTERN_TYPES } from '@druid-toolkit/query';
 import type { JSX } from 'react';
 import React, { useState } from 'react';
 
+import type { QuerySource } from '../../../../modules';
 import { ColumnPickerMenu } from '../../column-picker-menu/column-picker-menu';
-import type { Dataset } from '../../utils';
 import { initPatternForColumn } from '../pattern-helpers';
 
 import { ContainsFilterControl } from './contains-filter-control/contains-filter-control';
@@ -48,21 +54,21 @@ const PATTERN_TYPE_TO_NAME: Record<FilterPatternType, string> = {
 };
 
 export interface FilterMenuProps {
-  dataset: Dataset;
+  querySource: QuerySource;
   filter: SqlExpression;
   initPattern?: FilterPattern;
   onPatternChange(newPattern: FilterPattern): void;
   onClose(): void;
-  queryDruidSql<T = any>(sqlQueryPayload: Record<string, any>): Promise<T[]>;
+  runSqlQuery(query: string | SqlQuery): Promise<QueryResult>;
 }
 
 export const FilterMenu = React.memo(function FilterMenu(props: FilterMenuProps) {
-  const { dataset, filter, initPattern, onPatternChange, onClose, queryDruidSql } = props;
+  const { querySource, filter, initPattern, onPatternChange, onClose, runSqlQuery } = props;
 
   const [pattern, setPattern] = useState<FilterPattern | undefined>(initPattern);
   const [negated, setNegated] = useState(Boolean(pattern?.negated));
 
-  const { columns } = dataset;
+  const { columns } = querySource;
 
   if (!pattern) {
     return (
@@ -86,13 +92,13 @@ export const FilterMenu = React.memo(function FilterMenu(props: FilterMenuProps)
     case 'values':
       cont = (
         <ValuesFilterControl
-          dataset={dataset}
+          querySource={querySource}
           filter={filter.removeColumnFromAnd(pattern.column)}
           initFilterPattern={pattern}
           negated={negated}
           setFilterPattern={onAcceptPattern}
           onClose={onClose}
-          queryDruidSql={queryDruidSql}
+          runSqlQuery={runSqlQuery}
         />
       );
       break;
@@ -100,12 +106,12 @@ export const FilterMenu = React.memo(function FilterMenu(props: FilterMenuProps)
     case 'contains':
       cont = (
         <ContainsFilterControl
-          dataset={dataset}
+          querySource={querySource}
           filter={filter.removeColumnFromAnd(pattern.column)}
           initFilterPattern={pattern}
           negated={negated}
           setFilterPattern={onAcceptPattern}
-          queryDruidSql={queryDruidSql}
+          runSqlQuery={runSqlQuery}
         />
       );
       break;
@@ -113,12 +119,12 @@ export const FilterMenu = React.memo(function FilterMenu(props: FilterMenuProps)
     case 'regexp':
       cont = (
         <RegexpFilterControl
-          dataset={dataset}
+          querySource={querySource}
           filter={filter.removeColumnFromAnd(pattern.column)}
           initFilterPattern={pattern}
           negated={negated}
           setFilterPattern={onAcceptPattern}
-          queryDruidSql={queryDruidSql}
+          runSqlQuery={runSqlQuery}
         />
       );
       break;
@@ -126,7 +132,7 @@ export const FilterMenu = React.memo(function FilterMenu(props: FilterMenuProps)
     case 'timeInterval':
       cont = (
         <TimeIntervalFilterControl
-          dataset={dataset}
+          querySource={querySource}
           initFilterPattern={pattern}
           negated={negated}
           setFilterPattern={onAcceptPattern}
@@ -137,7 +143,7 @@ export const FilterMenu = React.memo(function FilterMenu(props: FilterMenuProps)
     case 'timeRelative':
       cont = (
         <TimeRelativeFilterControl
-          dataset={dataset}
+          querySource={querySource}
           initFilterPattern={pattern}
           negated={negated}
           setFilterPattern={onAcceptPattern}
@@ -156,7 +162,7 @@ export const FilterMenu = React.memo(function FilterMenu(props: FilterMenuProps)
       break;
 
     default:
-      cont = <div />; // TODO fix
+      cont = <div>{`Unknown pattern type: ${pattern.type}`}</div>;
       break;
   }
 

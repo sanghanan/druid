@@ -25,9 +25,12 @@ import { localStorageGetJson, localStorageSetJson } from '../utils';
 export function useLocalStorageState<T>(
   key: LocalStorageKeys,
   initialValue?: T,
+  inflateFn?: (x: any) => T,
 ): [T, Dispatch<SetStateAction<T>>] {
   const [state, setState] = useState(() => {
-    return localStorageGetJson(key) || initialValue;
+    const value = localStorageGetJson(key);
+    if (typeof value === 'undefined') return initialValue;
+    return inflateFn ? inflateFn(value) : value;
   });
 
   const setValue: Dispatch<SetStateAction<T>> = (value: T | ((prevState: T) => T)) => {

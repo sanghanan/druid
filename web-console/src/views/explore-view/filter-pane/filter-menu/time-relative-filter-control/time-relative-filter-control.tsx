@@ -20,8 +20,8 @@ import { Button, FormGroup } from '@blueprintjs/core';
 import type { TimeRelativeFilterPattern } from '@druid-toolkit/query';
 import React, { useState } from 'react';
 
+import type { QuerySource } from '../../../../../modules';
 import { ColumnPicker } from '../../../column-picker/column-picker';
-import type { Dataset } from '../../../utils';
 
 interface PartialPattern {
   anchor: 'timestamp' | 'maxDataTime';
@@ -99,7 +99,7 @@ const GROUPS: GroupedNamedPartialPatterns[] = [
 ];
 
 export interface TimeRelativeFilterControlProps {
-  dataset: Dataset;
+  querySource: QuerySource;
   initFilterPattern: TimeRelativeFilterPattern;
   negated: boolean;
   setFilterPattern(filterPattern: TimeRelativeFilterPattern): void;
@@ -108,7 +108,7 @@ export interface TimeRelativeFilterControlProps {
 export const TimeRelativeFilterControl = React.memo(function TimeRelativeFilterControl(
   props: TimeRelativeFilterControlProps,
 ) {
-  const { dataset, initFilterPattern, negated, setFilterPattern } = props;
+  const { querySource, initFilterPattern, negated, setFilterPattern } = props;
   const [column, setColumn] = useState<string>(initFilterPattern.column);
 
   const initKey = partialPatternToKey(initFilterPattern);
@@ -116,7 +116,7 @@ export const TimeRelativeFilterControl = React.memo(function TimeRelativeFilterC
     <div className="time-relative-filter-control">
       <FormGroup label="Column">
         <ColumnPicker
-          availableColumns={dataset.columns}
+          availableColumns={querySource.columns}
           selectedColumnName={column}
           onSelectedColumnNameChange={setColumn}
         />

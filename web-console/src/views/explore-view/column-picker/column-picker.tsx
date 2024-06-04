@@ -17,8 +17,9 @@
  */
 
 import { HTMLSelect } from '@blueprintjs/core';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
 import React from 'react';
+
+import type { ExpressionMeta } from '../../../modules';
 
 export interface ColumnPickerProps {
   availableColumns: ExpressionMeta[] | undefined;

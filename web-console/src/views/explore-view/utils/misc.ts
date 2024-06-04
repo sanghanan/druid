@@ -16,36 +16,12 @@
  * limitations under the License.
  */
 
-import type { SqlExpression, SqlTable } from '@druid-toolkit/query';
-import { SqlColumn, SqlQuery } from '@druid-toolkit/query';
-import type { ExpressionMeta } from '@druid-toolkit/visuals-core';
-import type { ParameterDefinition } from '@druid-toolkit/visuals-core/src/models/parameter';
-
+import type { ParameterDefinition } from '../../../modules';
 import { nonEmptyArray } from '../../../utils';
-
-export interface Dataset {
-  table: SqlTable;
-  columns: ExpressionMeta[];
-}
 
 export function toggle<T>(xs: readonly T[], x: T, eq?: (a: T, b: T) => boolean): T[] {
   const e = eq || ((a, b) => a === b);
   return xs.find(_ => e(_, x)) ? xs.filter(d => !e(d, x)) : xs.concat([x]);
-}
-
-export function addTableScope(expression: SqlExpression, newTableScope: string): SqlExpression {
-  return expression.walk(ex => {
-    if (ex instanceof SqlColumn && !ex.getTableName()) {
-      return ex.changeTableName(newTableScope);
-    }
-    return ex;
-  }) as SqlExpression;
-}
-
-export function getInitQuery(table: SqlExpression, where: SqlExpression): SqlQuery {
-  return SqlQuery.from(table.as('t')).applyIf(String(where) !== 'TRUE', q =>
-    q.changeWhereExpression(addTableScope(where, 't')),
-  );
 }
 
 export function normalizeType(paramType: ParameterDefinition['type']): ParameterDefinition['type'] {
