@@ -227,16 +227,7 @@ export const GenericOutputTable = React.memo(function GenericOutputTable(
         if (column.isTimeColumn()) {
           // ToDo: clean
         } else if (column.sqlType === 'TIMESTAMP') {
-          menuItems.push(
-            <MenuItem
-              key="declare_time"
-              icon={IconNames.TIME}
-              text="Use as the primary time column"
-              onClick={() => {
-                onQueryAction(q => q.changeSelect(headerIndex, selectExpression.as(TIME_COLUMN)));
-              }}
-            />,
-          );
+          // ToDo: clean
         } else {
           // Not a time column -------------------------------------------
           const values = queryResult.rows.map(row => row[headerIndex]);

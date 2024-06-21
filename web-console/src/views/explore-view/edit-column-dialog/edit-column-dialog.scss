@@ -16,25 +16,28 @@
  * limitations under the License.
  */
 
-export * from './cast-breakdown';
-export * from './column-metadata';
-export * from './date';
-export * from './download';
-export * from './download-query-detail-archive';
-export * from './druid-lookup';
-export * from './druid-query';
-export * from './formatter';
-export * from './general';
-export * from './intermediate-query-state';
-export * from './local-storage-backed-visibility';
-export * from './local-storage-keys';
-export * from './null-mode-detection';
-export * from './object-change';
-export * from './query-action';
-export * from './query-manager';
-export * from './query-state';
-export * from './sanitizers';
-export * from './sql';
-export * from './table-helpers';
-export * from './types';
-export * from './values-query';
+@import '../../../variables';
+
+.edit-column-dialog {
+  &.#{$bp-ns}-dialog {
+    width: 80vw;
+    height: 80vh;
+  }
+
+  .#{$bp-ns}-dialog-body {
+    display: flex;
+    gap: 8px;
+
+    .controls {
+      flex: 1;
+    }
+
+    .preview {
+      width: 200px;
+    }
+  }
+
+  .#{$bp-ns}-dialog-footer {
+    margin-top: 0;
+  }
+}

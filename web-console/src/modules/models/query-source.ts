@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import type { SqlQuery } from '@druid-toolkit/query';
+import type { SqlExpression, SqlQuery } from '@druid-toolkit/query';
 import { C, SqlStar } from '@druid-toolkit/query';
 
 import type { ExpressionMeta } from '../models';
@@ -60,10 +60,28 @@ export class QuerySource {
     this.columns = columns;
   }
 
+  public getSourceExpressionForColumn(outputName: string): SqlExpression {
+    const sourceExpression = this.query
+      .getSelectExpressionsArray()
+      .find(ex => ex.getOutputName() === outputName);
+    if (sourceExpression) return sourceExpression;
+    return C(outputName);
+  }
+
   public deleteColumn(outputName: string): SqlQuery {
     const noStarQuery = QuerySource.materializeStarIfNeeded(this.query, this.columns);
     return noStarQuery.changeSelectExpressions(
       noStarQuery.getSelectExpressionsArray().filter(ex => ex.getOutputName() !== outputName),
+    );
+  }
+
+  public changeExpression(newExpression: SqlExpression): SqlQuery {
+    const noStarQuery = QuerySource.materializeStarIfNeeded(this.query, this.columns);
+    const outputName = newExpression.getOutputName();
+    return noStarQuery.changeSelectExpressions(
+      noStarQuery
+        .getSelectExpressionsArray()
+        .map(ex => (ex.getOutputName() === outputName ? newExpression : ex)),
     );
   }
 }

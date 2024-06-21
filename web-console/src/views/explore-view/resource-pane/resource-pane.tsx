@@ -19,13 +19,14 @@
 import { Icon, Intent, Menu, MenuDivider, MenuItem } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type { SqlQuery } from '@druid-toolkit/query';
+import type { SqlExpression, SqlQuery } from '@druid-toolkit/query';
 import React, { useState } from 'react';
 
 import { ClearableInput } from '../../../components';
 import type { ExpressionMeta, QuerySource } from '../../../modules';
 import { caseInsensitiveContains, dataTypeToIcon, filterMap } from '../../../utils';
 import { DragHelper } from '../drag-helper';
+import { EditColumnDialog } from '../edit-column-dialog/edit-column-dialog';
 
 import './resource-pane.scss';
 
@@ -40,7 +41,7 @@ export const ResourcePane = function ResourcePane(props: ResourcePaneProps) {
   const { querySource, onQueryChange, onFilter, onShow } = props;
   const [columnSearch, setColumnSearch] = useState('');
 
-  // const { query, columns } = querySource;
+  const [editedExpression, setEditedExpression] = useState<SqlExpression | undefined>();
 
   return (
     <div className="resource-pane">
@@ -69,6 +70,13 @@ export const ResourcePane = function ResourcePane(props: ResourcePaneProps) {
                   )}
                   <MenuDivider />
                   <MenuItem
+                    icon={IconNames.EDIT}
+                    text="Edit"
+                    onClick={() =>
+                      setEditedExpression(querySource.getSourceExpressionForColumn(columnName))
+                    }
+                  />
+                  <MenuItem
                     icon={IconNames.TRASH}
                     text="Delete"
                     intent={Intent.DANGER}
@@ -96,6 +104,12 @@ export const ResourcePane = function ResourcePane(props: ResourcePaneProps) {
           );
         })}
       </div>
+      {editedExpression && (
+        <EditColumnDialog
+          onApply={newExpression => onQueryChange(querySource.changeExpression(newExpression))}
+          onClose={() => setEditedExpression(undefined)}
+        />
+      )}
     </div>
   );
 };

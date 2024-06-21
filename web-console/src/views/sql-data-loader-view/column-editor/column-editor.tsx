@@ -28,13 +28,20 @@ import {
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { Popover2 } from '@blueprintjs/popover2';
-import type { QueryResult } from '@druid-toolkit/query';
-import { F, SqlExpression, SqlFunction, SqlType } from '@druid-toolkit/query';
+import type { QueryResult, SqlExpression } from '@druid-toolkit/query';
+import { SqlType } from '@druid-toolkit/query';
 import type { JSX } from 'react';
 import React, { useState } from 'react';
 
 import { AppToaster } from '../../../singletons';
-import { deepDelete, deleteKeys, tickIcon } from '../../../utils';
+import {
+  castBreakdownsEqual,
+  castBreakdownToExpression,
+  deepDelete,
+  deleteKeys,
+  expressionToCastBreakdown,
+  tickIcon,
+} from '../../../utils';
 import { FlexibleQueryInput } from '../../workbench-view/flexible-query-input/flexible-query-input';
 
 import './column-editor.scss';
@@ -43,78 +50,6 @@ function getTargetTypes(isArray: boolean): SqlType[] {
   return isArray
     ? [SqlType.VARCHAR_ARRAY, SqlType.BIGINT_ARRAY, SqlType.DOUBLE_ARRAY]
     : [SqlType.VARCHAR, SqlType.BIGINT, SqlType.DOUBLE];
-}
-
-interface CastBreakdown {
-  formula: string;
-  castType?: SqlType;
-  forceMultiValue: boolean;
-  outputName: string;
-}
-
-function expressionToCastBreakdown(expression: SqlExpression): CastBreakdown {
-  const outputName = expression.getOutputName() || '';
-  expression = expression.getUnderlyingExpression();
-
-  if (expression instanceof SqlFunction) {
-    const asType = expression.getCastType();
-    const formula = String(expression.getArg(0));
-    if (asType) {
-      return {
-        formula,
-        castType: asType,
-        forceMultiValue: false,
-        outputName,
-      };
-    } else if (expression.getEffectiveFunctionName() === 'ARRAY_TO_MV') {
-      return {
-        formula,
-        forceMultiValue: true,
-        outputName,
-      };
-    }
-  }
-
-  return {
-    formula: String(expression),
-    forceMultiValue: false,
-    outputName,
-  };
-}
-
-function castBreakdownToExpression({
-  formula,
-  castType,
-  forceMultiValue,
-  outputName,
-}: CastBreakdown): SqlExpression {
-  let newExpression = SqlExpression.parse(formula);
-  const defaultOutputName = newExpression.getOutputName();
-
-  if (castType) {
-    newExpression = newExpression.cast(castType);
-  } else if (forceMultiValue) {
-    newExpression = F('ARRAY_TO_MV', newExpression);
-  }
-
-  if (!defaultOutputName && !outputName) {
-    throw new Error('Must explicitly define an output name');
-  }
-
-  if (newExpression.getOutputName() !== outputName) {
-    newExpression = newExpression.as(outputName);
-  }
-
-  return newExpression;
-}
-
-function castBreakdownsEqual(a: CastBreakdown, b: CastBreakdown): boolean {
-  return (
-    a.formula === b.formula &&
-    String(a.castType) === String(b.castType) &&
-    a.forceMultiValue === b.forceMultiValue &&
-    a.outputName === b.outputName
-  );
 }
 
 interface ColumnEditorProps {
