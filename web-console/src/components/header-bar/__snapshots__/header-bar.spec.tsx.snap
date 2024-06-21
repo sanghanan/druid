@@ -171,6 +171,18 @@ exports[`HeaderBar matches snapshot 1`] = `
             shouldDismissPopover={true}
             text="Explore"
           />
+          <Blueprint4.MenuItem
+            active={false}
+            disabled={false}
+            href="#tiles"
+            icon="applications"
+            label="(experimental)"
+            multiline={false}
+            popoverProps={{}}
+            selected={false}
+            shouldDismissPopover={true}
+            text="Tiles"
+          />
         </Blueprint4.Menu>
       }
       defaultIsOpen={false}

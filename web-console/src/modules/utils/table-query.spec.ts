@@ -51,15 +51,15 @@ function batchArray<T>(array: T[], batchSize: number): T[][] {
 
 describe('table-query', () => {
   describe('specific tests', () => {
-    const source = SqlQuery.create(T('kttm')).changeWhereExpression(
-      sql`(TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'`,
-    );
+    const source = SqlQuery.create(T('kttm'));
+    const where = sql`(TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'`;
 
     it('works with no split', () => {
       expect(
         nlQueryToString(
           makeTableQueryAndHints({
             source,
+            where,
             splitColumns: [],
             showColumns: [],
             metrics: [{ expression: SqlExpression.parse('COUNT(*)'), name: 'Count' }],
@@ -73,8 +73,8 @@ describe('table-query', () => {
         FROM (
           SELECT *
           FROM "kttm"
-          WHERE (TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'
         )
+        WHERE (TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'
         ORDER BY "Count" DESC
         LIMIT 200
         "
@@ -86,6 +86,7 @@ describe('table-query', () => {
         nlQueryToString(
           makeTableQueryAndHints({
             source,
+            where,
             splitColumns: [{ expression: C('browser_version'), name: 'Browser' }],
             showColumns: [{ expression: C('browser'), name: 'Browser' }],
             metrics: [
@@ -110,8 +111,8 @@ describe('table-query', () => {
         FROM (
           SELECT *
           FROM "kttm"
-          WHERE (TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'
         )
+        WHERE (TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'
         GROUP BY 1
         ORDER BY "Count" DESC
         LIMIT 200
@@ -124,6 +125,7 @@ describe('table-query', () => {
         nlQueryToString(
           makeTableQueryAndHints({
             source,
+            where,
             splitColumns: [{ expression: C('browser_version'), name: 'Browser Version' }],
             showColumns: [{ expression: C('browser'), name: 'Browser' }],
             metrics: [
@@ -146,7 +148,10 @@ describe('table-query', () => {
         WITH
         "common" AS (
           SELECT *
-          FROM "kttm"
+          FROM (
+            SELECT *
+            FROM "kttm"
+          )
           WHERE ((TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') OR (TIME_SHIFT(TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1), 'P1D', -1) <= "__time" AND "__time" < TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'P1D', -1))) AND "country" = 'United States'
         ),
         "top_values" AS (
@@ -202,6 +207,7 @@ describe('table-query', () => {
         nlQueryToString(
           makeTableQueryAndHints({
             source,
+            where,
             splitColumns: [{ expression: C('browser_version'), name: 'Browser Version' }],
             showColumns: [{ expression: C('browser'), name: 'Browser' }],
             metrics: [
@@ -224,7 +230,10 @@ describe('table-query', () => {
         WITH
         "common" AS (
           SELECT *
-          FROM "kttm"
+          FROM (
+            SELECT *
+            FROM "kttm"
+          )
           WHERE ((TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') OR (TIME_SHIFT(TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1), 'P1D', -1) <= "__time" AND "__time" < TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'P1D', -1))) AND "country" = 'United States'
         ),
         "top_values" AS (
@@ -279,6 +288,7 @@ describe('table-query', () => {
         nlQueryToString(
           makeTableQueryAndHints({
             source,
+            where,
             splitColumns: [{ expression: C('browser_version'), name: 'Browser' }],
             showColumns: [{ expression: C('browser'), name: 'Browser' }],
             metrics: [
@@ -302,7 +312,10 @@ describe('table-query', () => {
         WITH
         "common" AS (
           SELECT *
-          FROM "kttm"
+          FROM (
+            SELECT *
+            FROM "kttm"
+          )
           WHERE ((TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') OR (TIME_SHIFT(TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1), 'P1D', -1) <= "__time" AND "__time" < TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'P1D', -1))) AND "country" = 'United States'
         ),
         "main" AS (
@@ -349,9 +362,8 @@ describe('table-query', () => {
   });
 
   describe('uber test', () => {
-    const source = SqlQuery.create(T('kttm')).changeWhereExpression(
-      sql`(TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'`,
-    );
+    const source = SqlQuery.create(T('kttm'));
+    const where = sql`(TIME_SHIFT(TIMESTAMP '2019-08-26 00:00:00', 'PT1H', -1) <= "__time" AND "__time" < TIMESTAMP '2019-08-26 00:00:00') AND "country" = 'United States'`;
 
     const splitColumnsVariations: [string, ExpressionMeta[]][] = [
       ['no group by', []],
@@ -453,6 +465,7 @@ describe('table-query', () => {
                       .join(', '),
                     makeTableQueryAndHints({
                       source,
+                      where,
                       splitColumns,
                       showColumns,
                       metrics,

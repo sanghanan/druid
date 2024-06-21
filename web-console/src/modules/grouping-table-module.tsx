@@ -203,7 +203,7 @@ ModuleRepository.registerModule<GroupingTableParameterValues>({
     },
   },
   component: function GroupingTableModule(props) {
-    const { querySource, parameterValues, runSqlQuery } = props;
+    const { querySource, where, parameterValues, runSqlQuery } = props;
     const [orderBy, setOrderBy] = useState<SqlOrderByExpression | undefined>();
 
     const pivotValueQuery = useMemo(() => {
@@ -233,6 +233,7 @@ ModuleRepository.registerModule<GroupingTableParameterValues>({
 
       return makeTableQueryAndHints({
         source: querySource.query,
+        where,
         splitColumns: parameterValues.splitColumns,
         timeBucket: parameterValues.timeBucket,
         showColumns: parameterValues.showColumns,
@@ -248,7 +249,7 @@ ModuleRepository.registerModule<GroupingTableParameterValues>({
         orderBy,
         useGroupingToOrderSubQueries: NEEDS_GROUPING_TO_ORDER,
       });
-    }, [parameterValues, orderBy, pivotValueState.data]);
+    }, [querySource.query, where, parameterValues, orderBy, pivotValueState.data]);
 
     const [resultState] = useQueryManager({
       query: queryAndHints,

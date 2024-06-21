@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import type { SqlQuery } from '@druid-toolkit/query';
 import { F, SqlColumn, SqlExpression, SqlFunction, SqlLiteral } from '@druid-toolkit/query';
 
 import { partition } from '../../utils';
@@ -64,35 +63,6 @@ export function decodeWhereForCompares(
     mainWherePart,
     perCompareWhereParts,
   };
-}
-
-export function decodeQueryAndWhereForCompares(
-  query: SqlQuery,
-  compares: Compare[],
-): {
-  commonQuery: SqlQuery;
-  mainWherePart: SqlExpression;
-  perCompareWhereParts: SqlExpression[];
-} {
-  const { commonWhere, mainWherePart, perCompareWhereParts } = decodeWhereForCompares(
-    query.getEffectiveWhereExpression(),
-    compares,
-  );
-
-  return {
-    commonQuery: query.changeWhereExpression(commonWhere),
-    mainWherePart,
-    perCompareWhereParts,
-  };
-}
-
-export function getQueryWithWhereForAllCompares(
-  query: SqlQuery,
-  compares: Compare[],
-): SqlExpression {
-  return query.changeWhereExpression(
-    decodeWhereForCompares(query.getEffectiveWhereExpression(), compares).commonWhere,
-  );
 }
 
 function expressionUsesTime(expression: SqlExpression): boolean {

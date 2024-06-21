@@ -35,12 +35,7 @@ import { forceSignInNumberFormatter, formatNumber, formatPercent } from '../../u
 import type { ExpressionMeta } from '../models';
 
 import type { Compare } from './utils';
-import {
-  addTableScope,
-  decodeQueryAndWhereForCompares,
-  decodeWhereForCompares,
-  getQueryWithWhereForAllCompares,
-} from './utils';
+import { addTableScope, decodeWhereForCompares } from './utils';
 
 export type MultipleValueMode = 'null' | 'empty' | 'latest' | 'latestNonNull' | 'count';
 
@@ -341,6 +336,7 @@ export interface QueryAndHints {
 
 export interface MakeTableQueryAndHintsOptions {
   source: SqlQuery;
+  where: SqlExpression;
   splitColumns: ExpressionMeta[];
   timeBucket?: string;
   showColumns: ExpressionMeta[];
@@ -363,6 +359,7 @@ export interface MakeTableQueryAndHintsOptions {
 }
 export function makeTableQueryAndHints(options: MakeTableQueryAndHintsOptions): QueryAndHints {
   const source = options.source;
+  const where = options.where;
   const splitColumns = options.splitColumns;
   const timeBucket = options.timeBucket || 'PT1H';
   const showColumns = options.showColumns;
@@ -400,6 +397,7 @@ export function makeTableQueryAndHints(options: MakeTableQueryAndHintsOptions): 
     if (effectiveCompareStrategy === 'filtered') {
       return makeFilteredCompareTableQueryAndHints({
         source,
+        where,
         splitColumns,
         timeBucket,
         showColumns,
@@ -413,6 +411,7 @@ export function makeTableQueryAndHints(options: MakeTableQueryAndHintsOptions): 
     } else {
       return makeJoinCompareTableQueryAndHints({
         source,
+        where,
         splitColumns,
         timeBucket,
         showColumns,
@@ -431,6 +430,7 @@ export function makeTableQueryAndHints(options: MakeTableQueryAndHintsOptions): 
   } else {
     return makeNonCompareTableQueryAndHints({
       source,
+      where,
       splitColumns,
       timeBucket,
       showColumns,
@@ -444,6 +444,7 @@ export function makeTableQueryAndHints(options: MakeTableQueryAndHintsOptions): 
 
 interface MakeNonCompareTableQueryAndHintsOptions {
   source: SqlQuery;
+  where: SqlExpression;
   splitColumns: ExpressionMeta[];
   timeBucket: string;
   showColumns: ExpressionMeta[];
@@ -458,6 +459,7 @@ function makeNonCompareTableQueryAndHints(
 ): QueryAndHints {
   const {
     source,
+    where,
     splitColumns,
     timeBucket,
     showColumns,
@@ -498,6 +500,7 @@ function makeNonCompareTableQueryAndHints(
   return {
     columnHints: new Map<string, ColumnHint>(),
     query: SqlQuery.from(source)
+      .addWhere(where)
       .applyForEach(mainGroupByExpressions, (q, groupByExpression) =>
         q.addSelect(groupByExpression, {
           addToGroupBy: 'end',
@@ -516,6 +519,7 @@ function makeNonCompareTableQueryAndHints(
 
 interface MakeJoinCompareTableQueryAndHintsOptions {
   source: SqlQuery;
+  where: SqlExpression;
   splitColumns: ExpressionMeta[];
   timeBucket: string;
   showColumns: ExpressionMeta[];
@@ -536,6 +540,7 @@ function makeJoinCompareTableQueryAndHints(
 ): QueryAndHints {
   const {
     source,
+    where,
     splitColumns,
     timeBucket,
     showColumns,
@@ -576,10 +581,12 @@ function makeJoinCompareTableQueryAndHints(
     toShowColumnExpression(showColumn, multipleValueMode),
   );
 
-  const { commonQuery, mainWherePart, perCompareWhereParts } = decodeQueryAndWhereForCompares(
-    source,
+  const { commonWhere, mainWherePart, perCompareWhereParts } = decodeWhereForCompares(
+    where,
     compares,
   );
+
+  const commonQuery = SqlQuery.selectStarFrom(source).addWhere(commonWhere);
 
   const topValuesQuery =
     splitColumns.length && restrictTop !== 'never'
@@ -774,6 +781,7 @@ function makeJoinCompareTableQueryAndHints(
 
 interface MakeFilteredCompareTableQueryAndHintsOptions {
   source: SqlQuery;
+  where: SqlExpression;
   splitColumns: ExpressionMeta[];
   timeBucket: string;
   showColumns: ExpressionMeta[];
@@ -790,6 +798,7 @@ function makeFilteredCompareTableQueryAndHints(
 ): QueryAndHints {
   const {
     source,
+    where,
     splitColumns,
     timeBucket,
     showColumns,
@@ -823,13 +832,14 @@ function makeFilteredCompareTableQueryAndHints(
     toShowColumnExpression(showColumn, multipleValueMode),
   );
 
-  const { mainWherePart, perCompareWhereParts } = decodeWhereForCompares(
-    source.getEffectiveWhereExpression(),
+  const { commonWhere, mainWherePart, perCompareWhereParts } = decodeWhereForCompares(
+    where,
     compares,
   );
 
   const columnHints = new Map<string, ColumnHint>();
-  const query = SqlQuery.from(getQueryWithWhereForAllCompares(source, compares))
+  const query = SqlQuery.from(source)
+    .addWhere(commonWhere)
     .applyForEach(mainGroupByExpressions, (q, groupByExpression) =>
       q.addSelect(groupByExpression, {
         addToGroupBy: 'end',
