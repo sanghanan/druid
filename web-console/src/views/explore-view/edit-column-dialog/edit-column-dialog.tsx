@@ -27,7 +27,7 @@ import { FlexibleQueryInput } from '../../workbench-view/flexible-query-input/fl
 import './edit-column-dialog.scss';
 
 export interface EditColumnDialogProps {
-  initExpression?: SqlExpression;
+  initExpression: SqlExpression | undefined;
   onApply(expression: SqlExpression): void;
   onClose(): void;
 }
@@ -35,11 +35,10 @@ export interface EditColumnDialogProps {
 export const EditColumnDialog = React.memo(function EditColumnDialog(props: EditColumnDialogProps) {
   const { initExpression, onApply, onClose } = props;
 
-  const [initBreakdown] = useState(
-    initExpression ? expressionToCastBreakdown(initExpression) : undefined,
-  );
   const [currentBreakdown, setCurrentBreakdown] = useState(
-    initBreakdown || { formula: '', forceMultiValue: false, outputName: '' },
+    initExpression
+      ? expressionToCastBreakdown(initExpression)
+      : { formula: '', forceMultiValue: false, outputName: '' },
   );
 
   return (
@@ -54,7 +53,7 @@ export const EditColumnDialog = React.memo(function EditColumnDialog(props: Edit
               }}
             />
           </FormGroup>
-          <FormGroup label="SQL expression">
+          <FormGroup label="SQL expression" className="sql-expression-form-group">
             <FlexibleQueryInput
               showGutter={false}
               placeholder="expression"
@@ -63,6 +62,7 @@ export const EditColumnDialog = React.memo(function EditColumnDialog(props: Edit
                 setCurrentBreakdown({ ...currentBreakdown, formula });
               }}
               columnMetadata={undefined}
+              leaveBackground
             />
           </FormGroup>
         </div>

@@ -106,7 +106,12 @@ export const ResourcePane = function ResourcePane(props: ResourcePaneProps) {
       </div>
       {editedExpression && (
         <EditColumnDialog
-          onApply={newExpression => onQueryChange(querySource.changeExpression(newExpression))}
+          initExpression={editedExpression}
+          onApply={newExpression =>
+            onQueryChange(
+              querySource.changeExpression(editedExpression.getOutputName()!, newExpression),
+            )
+          }
           onClose={() => setEditedExpression(undefined)}
         />
       )}

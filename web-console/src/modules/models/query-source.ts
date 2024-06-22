@@ -75,13 +75,12 @@ export class QuerySource {
     );
   }
 
-  public changeExpression(newExpression: SqlExpression): SqlQuery {
+  public changeExpression(oldOutputName: string, newExpression: SqlExpression): SqlQuery {
     const noStarQuery = QuerySource.materializeStarIfNeeded(this.query, this.columns);
-    const outputName = newExpression.getOutputName();
     return noStarQuery.changeSelectExpressions(
       noStarQuery
         .getSelectExpressionsArray()
-        .map(ex => (ex.getOutputName() === outputName ? newExpression : ex)),
+        .map(ex => (ex.getOutputName() === oldOutputName ? newExpression : ex)),
     );
   }
 }
